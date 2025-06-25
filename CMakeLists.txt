@@ -41,14 +41,14 @@ set_compile_flags(${LIBRARY_NAME})
 
 
 # Benchmark
-option(WITH_BENCHMARK "Build benchmark example." OFF)
+option(WITH_BENCHMARK "Build benchmark example." ON)
 if(WITH_BENCHMARK)
 	add_subdirectory(benchmark)
 endif()
 
 
 # Unit tests
-option(BUILD_TESTS "Build unit tests." OFF)
+option(BUILD_TESTS "Build unit tests." ON)
 if(BUILD_TESTS)
 	add_subdirectory(tests)
 endif()

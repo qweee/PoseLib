@@ -302,6 +302,8 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
             x.normalize();
             Eigen::Vector3d X;
 
+            Eigen::Vector3d x_fisheye{0.0, 0.0, 1.0};
+
             if (options.generalized_) {
                 p << offset_gen(random_engine), offset_gen(random_engine), offset_gen(random_engine);
             }
@@ -315,7 +317,22 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
                 x.normalize();
             }
 
+            // New: fisheye camera project 3D to 2D
+            double rho = std::sqrt(X(0) * X(0) + X(1) * X(1));
+
+            if (rho > 1e-8) {
+                double theta = std::atan2(rho, X(2));
+                x_fisheye[0] = instance.focal_gt * theta * X(0) / rho;
+                x_fisheye[1] = instance.focal_gt * theta * X(1) / rho;
+            } else {
+                x_fisheye.block<2, 1>(0, 0) = X.block<2, 1>(0, 0) / X(2) * instance.focal_gt;
+            }
+
+            // probably not needed to be normalized
+            // x_fisheye.normalize();
+
             instance.x_point_.push_back(x);
+            instance.x_point_fisheye_.push_back(x_fisheye);
             instance.X_point_.push_back(X);
             instance.p_point_.push_back(p);
         }

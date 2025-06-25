@@ -16,6 +16,7 @@ struct AbsolutePoseProblemInstance {
     // Point-to-point correspondences
     std::vector<Eigen::Vector3d> x_point_;
     std::vector<Eigen::Vector3d> X_point_;
+    std::vector<Eigen::Vector2d> x_point_fisheye_;
 
     // Point-to-line correspondences
     std::vector<Eigen::Vector3d> x_line_;
@@ -123,6 +124,9 @@ void set_random_pose(CameraPose &pose, bool upright, bool planar);
 
 void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemInstance> *problem_instances,
                                const ProblemOptions &options);
+
+// TODO: add fisheye camera model AbsolutePoseProblem (point-to-point is enough)
+                               
 void generate_relpose_problems(int n_problems, std::vector<RelativePoseProblemInstance> *problem_instances,
                                const ProblemOptions &options);
 void generate_homography_problems(int n_problems, std::vector<RelativePoseProblemInstance> *problem_instances,
