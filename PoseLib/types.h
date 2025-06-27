@@ -88,6 +88,20 @@ struct BundleStats {
     double grad_norm;
 };
 
+// New: add HCOptions
+struct HCOptions {
+    double step_size = 0.02;
+    size_t max_iterations = 1.0/step_size;
+    size_t newton_iter = 5;
+    bool forth_predictor = true;
+};
+
+// New: add HCStats
+struct HCStats {
+    bool success = true;
+    size_t iterations = 0;
+};
+
 // Options for robust estimators
 struct AbsolutePoseOptions {
     RansacOptions ransac;

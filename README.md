@@ -380,3 +380,5 @@ PoseLib is licensed under the BSD 3-Clause license. Please see [License](https:/
 
 ## Acknowledgements
 The RANSAC implementation is heavily inspired by [RansacLib](github.com/tsattler/RansacLib) from Torsten Sattler. 
+
+
