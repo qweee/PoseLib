@@ -13,10 +13,10 @@ class HCProblemBase {
     virtual void simulator(const Model &model) = 0;
     virtual void compute_polys(const Model &model) = 0;
     virtual void compute_jacobian(const Model &model) = 0;
-    virtual Model step(const Model &model) = 0;
+    // virtual Model step(const Model &model) = 0;
 
-    size_t num_params;
-    size_t num_polys;
+    static constexpr int num_params = 0;
+    static constexpr int num_polys = 0;
 
     typedef Model param_t;
 

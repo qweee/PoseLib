@@ -1160,6 +1160,59 @@ const std::vector<size_t> OpenCVFisheyeCameraModel::principal_point_idx = {2, 3}
 const std::vector<size_t> OpenCVFisheyeCameraModel::extra_idx = {4, 5, 6, 7};
 
 ///////////////////////////////////////////////////////////////////
+// Simple Fisheye camera (fx = fy and no distortion)
+//   params = f, cx, cy
+
+void SimpleFisheyeCameraModel::project(const std::vector<double> &params, const Eigen::Vector3d &x,
+                                       Eigen::Vector2d *xp) {
+    double rho = x.topRows<2>().norm();
+
+    if (rho > 1e-8) {
+        double theta = std::atan2(rho, x(2));
+
+        const double inv_r = 1.0 / rho;
+        (*xp)(0) = params[0] * x(0) * inv_r * theta + params[1];
+        (*xp)(1) = params[1] * x(1) * inv_r * theta + params[2];
+    } else {
+        // Very close to the principal axis - ignore distortion
+        (*xp)(0) = params[0] * x(0) + params[1];
+        (*xp)(1) = params[1] * x(1) + params[2];
+    }
+}
+
+void SimpleFisheyeCameraModel::unproject(const std::vector<double> &params, const Eigen::Vector2d &xp,
+                                         Eigen::Vector3d *x) {
+    const double px = (xp(0) - params[1]) / params[0];
+    const double py = (xp(1) - params[2]) / params[0];
+    const double rd = std::sqrt(px * px + py * py);
+
+    if (rd > 1e-8) {
+        double theta = rd / params[0];
+
+        (*x)(0) = px / rd;
+        (*x)(1) = py / rd;
+
+        if (std::abs(theta - M_PI_2) > 1e-8) {
+            (*x)(2) = 1.0 / std::tan(theta);
+        } else {
+            (*x)(2) = 0.0;
+        }
+    } else {
+        (*x)(0) = px;
+        (*x)(1) = py;
+        (*x)(2) = std::sqrt(1 - rd * rd);
+    }
+
+    x->normalize();
+}
+
+const size_t SimpleFisheyeCameraModel::num_params = 3;
+const std::string SimpleFisheyeCameraModel::params_info() { return "f, cx, cy"; };
+const std::vector<size_t> SimpleFisheyeCameraModel::focal_idx = {0};
+const std::vector<size_t> SimpleFisheyeCameraModel::principal_point_idx = {1, 2};
+
+
+///////////////////////////////////////////////////////////////////
 // Full OpenCV camera
 //   params = fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
 

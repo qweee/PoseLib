@@ -52,7 +52,8 @@ enum CameraModelId {
     RADIAL_1D = 11,
     SPHERICAL = 100,
     DIVISION = 101,
-    SIMPLE_DIVISION = 102
+    SIMPLE_DIVISION = 102,
+    SIMPLE_FISHEYE = 12
 };
 
 struct Camera {
@@ -190,6 +191,8 @@ SETUP_CAMERA_SHARED_DEFS(SphericalCameraModel, "SPHERICAL", 100);
 SETUP_CAMERA_SHARED_DEFS(DivisionCameraModel, "DIVISION", 101);
 SETUP_CAMERA_SHARED_DEFS(SimpleDivisionCameraModel, "SIMPLE_DIVISION", 102);
 
+SETUP_CAMERA_SHARED_DEFS(SimpleFisheyeCameraModel, "SIMPLE_FISHEYE", 12);
+
 #define SWITCH_CAMERA_MODELS                                                                                           \
     SWITCH_CAMERA_MODEL_CASE(NullCameraModel)                                                                          \
     SWITCH_CAMERA_MODEL_CASE(SimplePinholeCameraModel)                                                                 \
@@ -205,7 +208,7 @@ SETUP_CAMERA_SHARED_DEFS(SimpleDivisionCameraModel, "SIMPLE_DIVISION", 102);
     SWITCH_CAMERA_MODEL_CASE(ThinPrismFisheyeCameraModel)                                                              \
     SWITCH_CAMERA_MODEL_CASE(Radial1DCameraModel)                                                                      \
     SWITCH_CAMERA_MODEL_CASE(SphericalCameraModel)                                                                     \
-    SWITCH_CAMERA_MODEL_CASE(DivisionCameraModel)\
+    SWITCH_CAMERA_MODEL_CASE(DivisionCameraModel)                                                                      \
     SWITCH_CAMERA_MODEL_CASE(SimpleDivisionCameraModel);
 
 #define SWITCH_CAMERA_MODELS_DEFAULT_UNPROJECT_WITH_JAC                                                                \
@@ -222,7 +225,8 @@ SETUP_CAMERA_SHARED_DEFS(SimpleDivisionCameraModel, "SIMPLE_DIVISION", 102);
     SWITCH_CAMERA_MODEL_CASE(RadialFisheyeCameraModel)                                                                 \
     SWITCH_CAMERA_MODEL_CASE(ThinPrismFisheyeCameraModel)                                                              \
     SWITCH_CAMERA_MODEL_CASE(Radial1DCameraModel)                                                                      \
-    SWITCH_CAMERA_MODEL_CASE(SphericalCameraModel);
+    SWITCH_CAMERA_MODEL_CASE(SphericalCameraModel)                                                                     \
+    SWITCH_CAMERA_MODEL_CASE(SimpleFisheyeCameraModel);
 
 #undef SETUP_CAMERA_SHARED_DEFS
 

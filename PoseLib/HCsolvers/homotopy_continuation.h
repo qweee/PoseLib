@@ -118,6 +118,8 @@ HCStats HC_impl(Problem &problem, const HCOptions &opt, Solution &sol)
 
     }
 
+    return stats;
+
 };
 
 

@@ -8,8 +8,8 @@
 namespace poselib {
 
 class AbsoluteFisheyeHCProblem : public HCProblemBase<Image> {
-    // TODO: this class should include what I used for define functions for specific calculation, 
-    // especially for the polynomial evaluation and its jacobian
+    // TODO: this class should include what I used for define functions for specific problems, 
+    // especially for the polynomial evaluation and its jacobian and simulator
 
     public:
 
@@ -20,31 +20,39 @@ class AbsoluteFisheyeHCProblem : public HCProblemBase<Image> {
         typedef Image &pose_initial;
 
         // For pose formulation it is 6 + 1, for depth formulation its 4+1
-        static constexpr int num_params = 7;
-        static constexpr int num_polys = 8; 
+        num_params = 7;
+        num_polys = 8; 
         
 
         AbsoluteFisheyeHCProblem(const std::vector<Point2D> &points2D, const std::vector<Point3D> &points3D,
                                  const Image &_pose_initial)
             : x(points2D), X(points3D), pose_initial(_pose_initial) {
             // TODO: initialize the x_simulated
-
+            simulator(pose_initial);
         }
 
         Eigen::Matrix<double, num_params, 1> get_sol_vector() {
             // Assume fx = fy
-            CameraPose pose = pose_initial.pose;
-            Camera camera = pose_initial.camera;
+            const CameraPose pose = pose_initial.pose;
+            const Camera camera = pose_initial.camera;
             Eigen::Matrix<double, num_params, 1> sol;
             sol << pose.q, pose.t, camera.fx; // size 4+3+1 = 8
             return sol;
         }
 
         void simulator(const Image &pose_initial) {
-            CameraPose pose = pose_initial.pose;
-            Camera camera = pose_initial.camera;
+            const CameraPose pose = pose_initial.pose;
+            const Camera camera = pose_initial.camera;
+            const Eigen::Matrix3d R = pose.R();
+            const Eigen::Vector3d t = pose.t;
 
             // TODO: project the 3D points to the image plane (fisheye equidistant)
+            for (int i = 0; i < X.size(); ++i) {
+                const Eigen::Vector3d Z = R * X[i] + t;
+                Eigen::Vector2d xp;
+                SimpleFisheyeCameraModel::project(camera.params, Z, &xp);
+                x_simulated.push_back(xp);
+            }
             
         }
 
