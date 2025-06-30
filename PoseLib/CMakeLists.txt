@@ -9,6 +9,7 @@ set(SOURCES
     solvers/p3p.cc
     solvers/p3p_ding.cc
     solvers/p4pf.cc
+    solvers/p4pfr.cc
     solvers/p35pf.cc
     solvers/p5pf.cc
     solvers/p5pfr.cc
@@ -66,6 +67,7 @@ set(HEADERS_PUBLIC
     solvers/p3p.h
     solvers/p3p_ding.h
     solvers/p4pf.h
+    solvers/p4pfr.h
     solvers/p35pf.h
     solvers/p5pf.h
     solvers/p5lp_radial.h

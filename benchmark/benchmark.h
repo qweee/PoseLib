@@ -52,27 +52,6 @@ struct SolverP4PF {
     static std::string name() { return "p4pf"; }
 };
 
-// TODO: add fisheye camera solver
-struct SolverP35PF_Fisheye {
-    // polynomial with poses as unknowns (8 unknowns)
-    static inline int solve(const AbsolutePoseProblemInstance &instance, poselib::CameraPoseVector *solutions,
-                            std::vector<double> *focals) {
-        return p35pf_fisheye(instance.x_point_fisheye_, instance.X_point_, solutions, focals, true);
-    }
-    typedef UnknownFocalValidator validator;
-    static std::string name() { return "p3.5pf_fisheye"; }
-};
-
-struct SolverP35PF_Fisheye_depth {
-    // polynomial with depths as unknowns (5 unknowns)
-    static inline int solve(const AbsolutePoseProblemInstance &instance, poselib::CameraPoseVector *solutions,
-                            std::vector<double> *focals) {
-        return p35pf_fisheye_depth(instance.x_point_fisheye_, instance.X_point_, solutions, focals, true);
-    }
-    typedef UnknownFocalValidator validator;
-    static std::string name() { return "p3.5pf_fisheye_depth"; }
-};
-
 
 struct SolverP35PF {
     static inline int solve(const AbsolutePoseProblemInstance &instance, poselib::CameraPoseVector *solutions,
@@ -86,6 +65,36 @@ struct SolverP35PF {
     typedef UnknownFocalValidator validator;
     static std::string name() { return "p3.5pf"; }
 };
+
+// NEW migrated from radialpose p4pfr, for fisheye camera resectioning
+// 1D division radial distortion model fx = fy = f
+struct SolverP4PFr {
+    static inline int solve(const AbsolutePoseProblemInstance &instance, poselib::CameraPoseVector *solutions,
+                            std::vector<double> *focals, std::vector<double> *ks) {
+        std::vector<Eigen::Vector2d> p2d(4);
+        for (int i = 0; i < 4; ++i) {
+            p2d[i] = instance.x_point_[i].hnormalized();
+        }
+        return p4pfr(p2d, instance.X_point_, solutions, focals, ks);
+    }
+    typedef UnknownFocalValidator validator;
+    static std::string name() { return "p4pfr"; }
+};
+
+struct SolverP4PFr_Fisheye {
+    static inline int solve(const AbsolutePoseProblemInstance &instance, poselib::CameraPoseVector *solutions,
+                            std::vector<double> *focals) {
+        std::vector<Eigen::Vector2d> p2d(4);
+        for (int i = 0; i < 4; ++i) {
+            p2d[i] = instance.x_point_[i].hnormalized();
+        }
+        std::vector<double> ks;
+        return p4pfr(p2d, instance.X_point_, solutions, focals, &ks);
+    }
+    typedef UnknownFocalFisheyeValidator validator;
+    static std::string name() { return "p4pfr_fisheye"; }
+};
+
 
 struct SolverP5PF {
     static inline int solve(const AbsolutePoseProblemInstance &instance, poselib::CameraPoseVector *solutions,
@@ -344,5 +353,27 @@ template <bool CheiralCheck = false> struct SolverHomography4pt {
         }
     }
 };
+
+
+// TODO: add fisheye camera solver
+// struct SolverP35PF_Fisheye {
+//     // polynomial with poses as unknowns (8 unknowns)
+//     static inline int solve(const AbsolutePoseProblemInstance &instance, poselib::CameraPoseVector *solutions,
+//                             std::vector<double> *focals) {
+//         return p35pf_fisheye(instance.x_point_fisheye_, instance.X_point_, solutions, focals, true);
+//     }
+//     typedef UnknownFocalValidator validator;
+//     static std::string name() { return "p3.5pf_fisheye"; }
+// };
+
+// struct SolverP35PF_Fisheye_depth {
+//     // polynomial with depths as unknowns (5 unknowns)
+//     static inline int solve(const AbsolutePoseProblemInstance &instance, poselib::CameraPoseVector *solutions,
+//                             std::vector<double> *focals) {
+//         return p35pf_fisheye_depth(instance.x_point_fisheye_, instance.X_point_, solutions, focals, true);
+//     }
+//     typedef UnknownFocalValidator validator;
+//     static std::string name() { return "p3.5pf_fisheye_depth"; }
+// };
 
 } // namespace poselib

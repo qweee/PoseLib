@@ -16,7 +16,7 @@ struct AbsolutePoseProblemInstance {
     // Point-to-point correspondences
     std::vector<Eigen::Vector3d> x_point_;
     std::vector<Eigen::Vector3d> X_point_;
-    std::vector<Eigen::Vector2d> x_point_fisheye_;
+    std::vector<Eigen::Vector3d> x_point_fisheye_;
 
     // Point-to-line correspondences
     std::vector<Eigen::Vector3d> x_line_;
@@ -92,6 +92,23 @@ struct RadialPoseValidator {
     // Checks if the solution is valid (i.e. is rotation matrix and satisfies projection constraints)
     static bool is_valid(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double scale, double tol);
 };
+
+//NEW unknown focal and radial distortion validator
+struct UnknownFocalRadialValidator {
+    // Computes the distance to the ground truth pose
+    static double compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal, double k);
+    // Checks if the solution is valid (i.e. is rotation matrix and satisfies projection constraints)
+    static bool is_valid(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal, double k, double tol);
+};
+
+// NEW for Fisheye camera resectioning
+struct UnknownFocalFisheyeValidator {
+    // Computes the distance to the ground truth pose
+    static double compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal);
+    // Checks if the solution is valid (i.e. is rotation matrix and satisfies projection constraints)
+    static bool is_valid(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal, double tol);
+};
+
 
 struct ProblemOptions {
     double min_depth_ = 0.1;

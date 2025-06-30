@@ -119,6 +119,67 @@ BenchmarkResult benchmark_w_extra(int n_problems, const ProblemOptions &options,
     return result;
 }
 
+// NEW for demo test p4pfr  with 1D division radial distortion model
+template <typename Solver>
+BenchmarkResult benchmark_w_extra2(int n_problems, const ProblemOptions &options, double tol = 1e-6) {
+
+    std::vector<AbsolutePoseProblemInstance> problem_instances;
+    generate_abspose_problems(n_problems, &problem_instances, options);
+
+    BenchmarkResult result;
+    result.instances_ = n_problems;
+    result.name_ = Solver::name();
+    if (options.additional_name_ != "") {
+        result.name_ += options.additional_name_;
+    }
+    result.options_ = options;
+    std::cout << "Running benchmark: " << result.name_ << std::flush;
+
+    // Run benchmark where we check solution quality
+    for (const AbsolutePoseProblemInstance &instance : problem_instances) {
+        CameraPoseVector solutions;
+        std::vector<double> focals;
+        std::vector<double> ks;
+
+        int sols = Solver::solve(instance, &solutions, &focals, &ks);
+
+        double pose_error = std::numeric_limits<double>::max();
+
+        result.solutions_ += sols;
+        for (size_t k = 0; k < solutions.size(); ++k) {
+            if (Solver::validator::is_valid(instance, solutions[k], focals[k], ks[k], tol))
+                result.valid_solutions_++;
+            pose_error = std::min(pose_error, Solver::validator::compute_pose_error(instance, solutions[k], focals[k], ks[k]));
+        }
+
+        if (pose_error < tol)
+            result.found_gt_pose_++;
+    }
+
+    std::vector<long> runtimes;
+    CameraPoseVector solutions;
+    std::vector<double> focals;
+    std::vector<double> ks;
+    for (int iter = 0; iter < 10; ++iter) {
+        auto start_time = std::chrono::high_resolution_clock::now();
+        for (const AbsolutePoseProblemInstance &instance : problem_instances) {
+            solutions.clear();
+            focals.clear();
+            ks.clear();
+
+            Solver::solve(instance, &solutions, &focals, &ks);
+        }
+
+        auto end_time = std::chrono::high_resolution_clock::now();
+        runtimes.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+    }
+
+    std::sort(runtimes.begin(), runtimes.end());
+    result.runtime_ns_ = runtimes[runtimes.size() / 2];
+    std::cout << "\r                                                                                \r";
+    return result;
+}
+
 template <typename Solver>
 BenchmarkResult benchmark_relative(int n_problems, const ProblemOptions &options, double tol = 1e-6) {
 
@@ -328,19 +389,19 @@ int main() {
     p4pf_opt.unknown_focal_ = true;
     results.push_back(poselib::benchmark_w_extra<poselib::SolverP4PF>(1e4, p4pf_opt, tol));
 
-    // P35Pf Fisheye
-    poselib::ProblemOptions p35pf_fisheye_opt = options;
-    p35pf_fisheye_opt.n_point_point_ = 4;
-    p35pf_fisheye_opt.n_point_line_ = 0;
-    p35pf_fisheye_opt.unknown_focal_ = true;
-    results.push_back(poselib::benchmark_w_extra<poselib::SolverP35PF_Fisheye>(1e4, p35pf_fisheye_opt, tol));
+    // // P35Pf Fisheye
+    // poselib::ProblemOptions p35pf_fisheye_opt = options;
+    // p35pf_fisheye_opt.n_point_point_ = 4;
+    // p35pf_fisheye_opt.n_point_line_ = 0;
+    // p35pf_fisheye_opt.unknown_focal_ = true;
+    // results.push_back(poselib::benchmark_w_extra<poselib::SolverP35PF_Fisheye>(1e4, p35pf_fisheye_opt, tol));
 
-    // P35Pf Fisheye Depth
-    poselib::ProblemOptions p35pf_fisheye_depth_opt = options;
-    p35pf_fisheye_depth_opt.n_point_point_ = 4;
-    p35pf_fisheye_depth_opt.n_point_line_ = 0;
-    p35pf_fisheye_depth_opt.unknown_focal_ = true;
-    results.push_back(poselib::benchmark_w_extra<poselib::SolverP35PF_Fisheye_depth>(1e4, p35pf_fisheye_depth_opt, tol));
+    // // P35Pf Fisheye Depth
+    // poselib::ProblemOptions p35pf_fisheye_depth_opt = options;
+    // p35pf_fisheye_depth_opt.n_point_point_ = 4;
+    // p35pf_fisheye_depth_opt.n_point_line_ = 0;
+    // p35pf_fisheye_depth_opt.unknown_focal_ = true;
+    // results.push_back(poselib::benchmark_w_extra<poselib::SolverP35PF_Fisheye_depth>(1e4, p35pf_fisheye_depth_opt, tol));
 
     // P35Pf
     poselib::ProblemOptions p35pf_opt = options;
@@ -348,6 +409,13 @@ int main() {
     p35pf_opt.n_point_line_ = 0;
     p35pf_opt.unknown_focal_ = true;
     results.push_back(poselib::benchmark_w_extra<poselib::SolverP35PF>(1e4, p35pf_opt, tol));
+
+    // P4PFr
+    poselib::ProblemOptions p4pfr_opt = options;
+    p4pfr_opt.n_point_point_ = 4;
+    p4pfr_opt.n_point_line_ = 0;
+    p4pfr_opt.unknown_focal_ = true;
+    results.push_back(poselib::benchmark_w_extra<poselib::SolverP4PFr>(1e4, p4pfr_opt, tol));
 
     // P5Pf
     poselib::ProblemOptions p5pf_opt = options;
@@ -534,6 +602,20 @@ int main() {
     homo4pt_opt.n_point_point_ = 4;
     results.push_back(poselib::benchmark_homography<poselib::SolverHomography4pt<false>>(1e5, homo4pt_opt, tol));
     results.push_back(poselib::benchmark_homography<poselib::SolverHomography4pt<true>>(1e5, homo4pt_opt, tol));
+
+    // NEW for demo test p4pfr_fisheye
+    poselib::ProblemOptions p4pfr_fisheye_opt = options;
+    p4pfr_fisheye_opt.n_point_point_ = 4;
+    p4pfr_fisheye_opt.n_point_line_ = 0;
+    p4pfr_fisheye_opt.unknown_focal_ = true;
+    results.push_back(poselib::benchmark_w_extra2<poselib::SolverP4PFr_Fisheye>(1e4, p4pfr_fisheye_opt, tol));
+
+    // NEW for P4PFr Fisheye camera resectioning
+    poselib::ProblemOptions p4pfr_fisheye_opt = options;
+    p4pfr_fisheye_opt.n_point_point_ = 4;
+    p4pfr_fisheye_opt.n_point_line_ = 0;
+    p4pfr_fisheye_opt.unknown_focal_ = true;
+    results.push_back(poselib::benchmark_w_extra<poselib::SolverP4PFr_Fisheye>(1e4, p4pfr_fisheye_opt, tol));
 
     display_result(results);
 

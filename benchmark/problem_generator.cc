@@ -207,6 +207,50 @@ bool UnknownFocalValidator::is_valid(const AbsolutePoseProblemInstance &instance
     return true;
 }
 
+// NEW for demo test p4pfr
+double UnknownFocalRadialValidator::compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose,
+                                                 double focal, double k) {
+    return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm() +
+           std::abs(instance.focal_gt - focal) + std::abs(instance.k_gt - k);
+}
+
+bool UnknownFocalRadialValidator::is_valid(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal, double k, double tol) {
+    if ((pose.R().transpose() * pose.R() - Eigen::Matrix3d::Identity()).norm() > tol)
+        return false;
+
+    if (focal < 0)
+        return false;
+}
+
+// NEW for Fisheye camera resectioning
+double UnknownFocalFisheyeValidator::compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose,
+                                                 double focal) {
+    return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm() +
+           std::abs(instance.focal_gt - focal);
+}
+
+bool UnknownFocalFisheyeValidator::is_valid(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal,
+                                     double tol) {
+    if ((pose.R().transpose() * pose.R() - Eigen::Matrix3d::Identity()).norm() > tol)
+        return false;
+
+    if (focal < 0)
+        return false;
+
+    // lambda*[tan(theta) x/rd; 1] = R*X + t
+    for (int i = 0; i < instance.x_point_.size(); ++i) {
+        double rd = std::sqrt(instance.x_point_[i](0) * instance.x_point_[i](0) + instance.x_point_[i](1) * instance.x_point_[i](1));
+        double theta = rd / focal;
+        Eigen::Vector3d x_fisheye = Eigen::Vector3d{instance.x_point_[i](0) / rd * std::tan(theta), instance.x_point_[i](1) / rd * std::tan(theta), 1.0};
+        double err = 1.0 - std::abs((x_fisheye).normalized()
+                                        .dot((pose.R() * instance.X_point_[i] + pose.t).normalized()));
+        if (err > tol)
+            return false;
+    }
+
+    return true;
+}
+
 double RadialPoseValidator::compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose,
                                                double scale) {
     // Only compute up to sign for radial cameras
