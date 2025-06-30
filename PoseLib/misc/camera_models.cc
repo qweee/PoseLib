@@ -1206,6 +1206,21 @@ void SimpleFisheyeCameraModel::unproject(const std::vector<double> &params, cons
     x->normalize();
 }
 
+void SimpleFisheyeCameraModel::getPosefromDepth(const Eigen::Vector4d &depths, const double f, const Eigen::Vector2d &xp,
+                                         Eigen::Vector3d *x) {
+
+    // TODO: implement the poses from depth and focal length (fisheye equidistant)
+    // get R and t using procrustes
+    const double f = params[0];
+    const double cx = params[1];
+    const double cy = params[2];
+
+    const double theta = std::atan2(xp(1), xp(0));
+    const double rd = f * std::tan(theta);
+
+}
+
+
 const size_t SimpleFisheyeCameraModel::num_params = 3;
 const std::string SimpleFisheyeCameraModel::params_info() { return "f, cx, cy"; };
 const std::vector<size_t> SimpleFisheyeCameraModel::focal_idx = {0};
