@@ -184,6 +184,11 @@ double UnknownFocalValidator::compute_pose_error(const AbsolutePoseProblemInstan
            std::abs(instance.focal_gt - focal);
 }
 
+// temporary for testing
+double UnknownFocalValidator::compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose) {
+    return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm();
+}
+
 bool UnknownFocalValidator::is_valid(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal,
                                      double tol) {
     if ((pose.R().transpose() * pose.R() - Eigen::Matrix3d::Identity()).norm() > tol)
@@ -227,8 +232,14 @@ bool UnknownFocalRadialValidator::is_valid(const AbsolutePoseProblemInstance &in
 // NEW for Fisheye camera resectioning
 double UnknownFocalFisheyeValidator::compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose,
                                                  double focal) {
+
     return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm() +
            std::abs(instance.focal_gt - focal);
+}
+
+double UnknownFocalFisheyeValidator::compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose) {
+
+    return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm();
 }
 
 bool UnknownFocalFisheyeValidator::is_valid(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal,
@@ -239,7 +250,7 @@ bool UnknownFocalFisheyeValidator::is_valid(const AbsolutePoseProblemInstance &i
     if (focal < 0)
         return false;
 
-    // lambda*[tan(theta) x/rd; 1] = R*X + t
+    // // lambda*[tan(theta) x/rd; 1] = R*X + t
     // for (int i = 0; i < instance.x_point_fisheye_.size(); ++i) {
     //     double rd = std::sqrt(instance.x_point_fisheye_[i](0) * instance.x_point_fisheye_[i](0) + instance.x_point_fisheye_[i](1) * instance.x_point_fisheye_[i](1));
     //     double theta = rd / focal;
@@ -363,6 +374,7 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
             }
 
             X = instance.scale_gt * p + x * depth_gen(random_engine);
+            Eigen::Vector3d X_proj = X;
 
             X = instance.pose_gt.R().transpose() * (X - instance.pose_gt.t);
 
@@ -372,25 +384,28 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
             }
 
             // New: fisheye camera project 3D to 2D
-            double rho = std::sqrt(X(0) * X(0) + X(1) * X(1));
+            double rho = std::sqrt(X_proj(0) * X_proj(0) + X_proj(1) * X_proj(1));
 
             if (rho > 1e-8) {
-                double theta = std::atan2(rho, X(2));
-                x_fisheye[0] = instance.focal_gt * theta * X(0) / rho;
-                x_fisheye[1] = instance.focal_gt * theta * X(1) / rho;
+                double theta = std::atan2(rho, X_proj(2));
+                x_fisheye[0] = instance.focal_gt * theta * X_proj(0) / rho;
+                x_fisheye[1] = instance.focal_gt * theta * X_proj(1) / rho;
             } else {
-                x_fisheye.block<2, 1>(0, 0) = X.block<2, 1>(0, 0) / X(2) * instance.focal_gt;
+                x_fisheye.block<2, 1>(0, 0) = X_proj.block<2, 1>(0, 0) / X_proj(2) * instance.focal_gt;
             }
 
             // probably not needed to be normalized
             // x_fisheye.normalize();
 
             if (options.unknown_rd_) {
+                x.hnormalized();
                 Point2D xp;
                 radial_distortion_camera.project(x, &xp);
                 x.topRows(2) = xp;
                 x[2] = 1.0;
+                x.normalize();
             }
+
 
             instance.x_point_.push_back(x);
             instance.x_point_fisheye_.push_back(x_fisheye);

@@ -90,7 +90,11 @@ BenchmarkResult benchmark_w_extra(int n_problems, const ProblemOptions &options,
         for (size_t k = 0; k < solutions.size(); ++k) {
             if (Solver::validator::is_valid(instance, solutions[k], extra[k], tol))
                 result.valid_solutions_++;
-            pose_error = std::min(pose_error, Solver::validator::compute_pose_error(instance, solutions[k], extra[k]));
+            if (options.focalError_) {
+                pose_error = std::min(pose_error, Solver::validator::compute_pose_error(instance, solutions[k], extra[k]));}
+            else {
+                pose_error = std::min(pose_error, Solver::validator::compute_pose_error(instance, solutions[k]));
+            }
         }
 
         if (pose_error < tol)
@@ -382,12 +386,12 @@ int main() {
     // gp4p_opt.additional_name_ = "(Deg.)";
     // results.push_back(poselib::benchmark_w_extra<poselib::SolverGP4PS>(1e4, gp4p_opt, tol));
 
-    // // P4Pf
-    // poselib::ProblemOptions p4pf_opt = options;
-    // p4pf_opt.n_point_point_ = 4;
-    // p4pf_opt.n_point_line_ = 0;
-    // p4pf_opt.unknown_focal_ = true;
-    // results.push_back(poselib::benchmark_w_extra<poselib::SolverP4PF>(1e4, p4pf_opt, tol));
+    // P4Pf
+    poselib::ProblemOptions p4pf_opt = options;
+    p4pf_opt.n_point_point_ = 4;
+    p4pf_opt.n_point_line_ = 0;
+    p4pf_opt.unknown_focal_ = true;
+    results.push_back(poselib::benchmark_w_extra<poselib::SolverP4PF>(1e4, p4pf_opt, tol));
 
     // // // P35Pf Fisheye
     // // poselib::ProblemOptions p35pf_fisheye_opt = options;
@@ -403,19 +407,19 @@ int main() {
     // // p35pf_fisheye_depth_opt.unknown_focal_ = true;
     // // results.push_back(poselib::benchmark_w_extra<poselib::SolverP35PF_Fisheye_depth>(1e4, p35pf_fisheye_depth_opt, tol));
 
-    // // P35Pf
-    // poselib::ProblemOptions p35pf_opt = options;
-    // p35pf_opt.n_point_point_ = 4;
-    // p35pf_opt.n_point_line_ = 0;
-    // p35pf_opt.unknown_focal_ = true;
-    // results.push_back(poselib::benchmark_w_extra<poselib::SolverP35PF>(1e4, p35pf_opt, tol));
+    // P35Pf
+    poselib::ProblemOptions p35pf_opt = options;
+    p35pf_opt.n_point_point_ = 4;
+    p35pf_opt.n_point_line_ = 0;
+    p35pf_opt.unknown_focal_ = true;
+    results.push_back(poselib::benchmark_w_extra<poselib::SolverP35PF>(1e4, p35pf_opt, tol));
 
-    // // P5Pf
-    // poselib::ProblemOptions p5pf_opt = options;
-    // p5pf_opt.n_point_point_ = 5;
-    // p5pf_opt.n_point_line_ = 0;
-    // p5pf_opt.unknown_focal_ = true;
-    // results.push_back(poselib::benchmark_w_extra<poselib::SolverP5PF>(1e4, p5pf_opt, tol));
+    // P5Pf
+    poselib::ProblemOptions p5pf_opt = options;
+    p5pf_opt.n_point_point_ = 5;
+    p5pf_opt.n_point_line_ = 0;
+    p5pf_opt.unknown_focal_ = true;
+    results.push_back(poselib::benchmark_w_extra<poselib::SolverP5PF>(1e4, p5pf_opt, tol));
 
     // // P2P2PL
     // poselib::ProblemOptions p2p2pl_opt = options;
@@ -602,13 +606,14 @@ int main() {
     p4pfr_opt.n_point_line_ = 0;
     p4pfr_opt.unknown_focal_ = true;
     p4pfr_opt.unknown_rd_ = true;
-    results.push_back(poselib::benchmark_w_extra2<poselib::SolverP4PFr>(1e4, p4pfr_opt, 1e-3));
+    results.push_back(poselib::benchmark_w_extra2<poselib::SolverP4PFr>(1e4, p4pfr_opt, tol));
 
     // NEW for P4PFr Fisheye camera resectioning
     poselib::ProblemOptions p4pfr_fisheye_opt = options;
     p4pfr_fisheye_opt.n_point_point_ = 4;
     p4pfr_fisheye_opt.n_point_line_ = 0;
     p4pfr_fisheye_opt.unknown_focal_ = true;
+    p4pfr_fisheye_opt.focalError_ = false;
     results.push_back(poselib::benchmark_w_extra<poselib::SolverP4PFr_Fisheye>(1e4, p4pfr_fisheye_opt, tol*1e4));
 
     display_result(results);

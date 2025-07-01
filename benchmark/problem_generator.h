@@ -83,6 +83,8 @@ struct HomographyValidator {
 struct UnknownFocalValidator {
     // Computes the distance to the ground truth pose
     static double compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal);
+    static double compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose);
+    
     // Checks if the solution is valid (i.e. is rotation matrix and satisfies projection constraints)
     static bool is_valid(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal, double tol);
 };
@@ -106,6 +108,8 @@ struct UnknownFocalRadialValidator {
 struct UnknownFocalFisheyeValidator {
     // Computes the distance to the ground truth pose
     static double compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal);
+    static double compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose);
+
     // Checks if the solution is valid (i.e. is rotation matrix and satisfies projection constraints)
     static bool is_valid(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double focal, double tol);
 };
@@ -136,6 +140,9 @@ struct ProblemOptions {
     double min_rd_ = -2.0;
     double max_rd_ = 0.0;
     std::string additional_name_ = "";
+
+    // NEW for Fisheye camera resectioning
+    bool focalError_ = true;
 };
 
 void set_random_pose(CameraPose &pose, bool upright, bool planar);
