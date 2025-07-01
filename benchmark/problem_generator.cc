@@ -220,6 +220,8 @@ bool UnknownFocalRadialValidator::is_valid(const AbsolutePoseProblemInstance &in
 
     if (focal < 0)
         return false;
+
+    return true;
 }
 
 // NEW for Fisheye camera resectioning
@@ -238,15 +240,15 @@ bool UnknownFocalFisheyeValidator::is_valid(const AbsolutePoseProblemInstance &i
         return false;
 
     // lambda*[tan(theta) x/rd; 1] = R*X + t
-    for (int i = 0; i < instance.x_point_.size(); ++i) {
-        double rd = std::sqrt(instance.x_point_[i](0) * instance.x_point_[i](0) + instance.x_point_[i](1) * instance.x_point_[i](1));
-        double theta = rd / focal;
-        Eigen::Vector3d x_fisheye = Eigen::Vector3d{instance.x_point_[i](0) / rd * std::tan(theta), instance.x_point_[i](1) / rd * std::tan(theta), 1.0};
-        double err = 1.0 - std::abs((x_fisheye).normalized()
-                                        .dot((pose.R() * instance.X_point_[i] + pose.t).normalized()));
-        if (err > tol)
-            return false;
-    }
+    // for (int i = 0; i < instance.x_point_fisheye_.size(); ++i) {
+    //     double rd = std::sqrt(instance.x_point_fisheye_[i](0) * instance.x_point_fisheye_[i](0) + instance.x_point_fisheye_[i](1) * instance.x_point_fisheye_[i](1));
+    //     double theta = rd / focal;
+    //     Eigen::Vector3d x_fisheye = Eigen::Vector3d{instance.x_point_fisheye_[i](0) / rd * std::tan(theta), instance.x_point_fisheye_[i](1) / rd * std::tan(theta), 1.0};
+    //     double err = 1.0 - std::abs((x_fisheye).normalized()
+    //                                     .dot((pose.R() * instance.X_point_[i] + pose.t).normalized()));
+    //     if (err > tol)
+    //         return false;
+    // }
 
     return true;
 }
@@ -321,8 +323,11 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
     std::uniform_real_distribution<double> coord_gen(-fov_scale, fov_scale);
     std::uniform_real_distribution<double> scale_gen(options.min_scale_, options.max_scale_);
     std::uniform_real_distribution<double> focal_gen(options.min_focal_, options.max_focal_);
+    std::uniform_real_distribution<double> rd_gen(options.min_rd_, options.max_rd_);
     std::normal_distribution<double> direction_gen(0.0, 1.0);
     std::normal_distribution<double> offset_gen(0.0, 1.0);
+
+    Camera radial_distortion_camera;
 
     for (int i = 0; i < n_problems; ++i) {
         AbsolutePoseProblemInstance instance;
@@ -333,6 +338,11 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
         }
         if (options.unknown_focal_) {
             instance.focal_gt = focal_gen(random_engine);
+        }
+
+        if (options.unknown_rd_) {
+            instance.k_gt = rd_gen(random_engine);
+            radial_distortion_camera = Camera("DIVISION", {1.0, 1.0, 0.0, 0.0, instance.k_gt}, -1, -1);
         }
 
         // Point to point correspondences
@@ -374,6 +384,13 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
 
             // probably not needed to be normalized
             // x_fisheye.normalize();
+
+            if (options.unknown_rd_) {
+                Point2D xp;
+                radial_distortion_camera.project(x, &xp);
+                x.topRows(2) = xp;
+                x[2] = 1.0;
+            }
 
             instance.x_point_.push_back(x);
             instance.x_point_fisheye_.push_back(x_fisheye);

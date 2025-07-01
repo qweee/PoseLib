@@ -71,4 +71,15 @@ namespace poselib {
         
     };
 
+    // TODO: get poses from depths (Fisheye equidistant)
+
+    void getPosefromDepth(const Eigen::Vector4d &depths, const double f, const std::vector<Eigen::Vector3d> &x, 
+        const std::vector<Eigen::Vector3d> &X, CameraPose &pose) {
+
+        // TODO: implement the poses from depth and focal length (fisheye equidistant)
+        // get R and t using procrustes
+        const double f = params[0];
+
+    }
+
 } // namespace PoseLib

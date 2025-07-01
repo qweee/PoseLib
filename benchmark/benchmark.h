@@ -77,7 +77,7 @@ struct SolverP4PFr {
         }
         return p4pfr(p2d, instance.X_point_, solutions, focals, ks);
     }
-    typedef UnknownFocalValidator validator;
+    typedef UnknownFocalRadialValidator validator;
     static std::string name() { return "p4pfr"; }
 };
 
@@ -86,7 +86,7 @@ struct SolverP4PFr_Fisheye {
                             std::vector<double> *focals) {
         std::vector<Eigen::Vector2d> p2d(4);
         for (int i = 0; i < 4; ++i) {
-            p2d[i] = instance.x_point_[i].hnormalized();
+            p2d[i] = instance.x_point_fisheye_[i].hnormalized();
         }
         std::vector<double> ks;
         return p4pfr(p2d, instance.X_point_, solutions, focals, &ks);

@@ -9,7 +9,23 @@ static const int C0_ind[] = { 0,3,8,23,24,25,26,27,28,29,30,31,35,36,49,51,52,53
 static const int C1_ind[] = { 1,2,4,5,6,7,13,15,16,17,18,21,23,24,25,26,27,28,31,37,44,45,47,48,50,51,52,53,54,55,56,57,58,59,65,67,70,72,73,75,76,78,79,80,81,82,83,85,86,95,98,100,101,103,104,107,108,109,110,111,113,114,116,117,122,123,124,126,128,129,131,132,135,136,137,138,139,140,143,148,155,156,157,158,163,164,165,166,167,172,173,174,181,183,184,185,186,191,192,193,194,195,196,199,205,212,213,215,216,218,219,220,221,222,223,225,226,235,238,240,241,243,244,247,248,249,250,251,256,257,262,264,268,269,271,272,275,276,277,278,279,295,296,297,298,303,304,305,306,307,324,325,327,328,331,332,333,334,335 };
 static const int AM_ind[] = { 2,0,1,3,4,5,7,9,10,11,6,15 };
 
+void filter_chirality(const std::vector<Eigen::Vector3d> &world_points, std::vector<poselib::CameraPose>& poses) {
+
+	for (int i = 0; i < poses.size(); ++i) {
+		for (int k = 0; k < world_points.size(); ++k) {
+			if (((poses[i].R().block<1, 3>(2, 0) * world_points[k]).array() + poses[i].t(2)).minCoeff() < 0) {
+				poses.erase(poses.begin() + i);
+				break;
+			}
+		}
+
+	}
+
+
+}
+
 namespace poselib {
+	
 
 int p4pfr(const std::vector<Eigen::Vector2d> &x, const std::vector<Eigen::Vector3d> &X, std::vector<CameraPose> *poses, 
 std::vector<double> *output_focals, std::vector<double> *output_ks) {
@@ -39,7 +55,7 @@ std::vector<double> *output_focals, std::vector<double> *output_ks) {
 
 	// Setup matrices A and B (see paper for definition)
 	for (int i = 0; i < 4; ++i) {
-		double d2 = x.col(i).squaredNorm();
+		double d2 = x[i].squaredNorm();
 
 		if (std::abs(x[i](0)) < SMALL_NUMBER) {
 			A(i, 0) = x[i](1) * X[i](0);
@@ -389,10 +405,10 @@ std::vector<double> *output_focals, std::vector<double> *output_ks) {
 		P.row(0) = P.row(0) / focal;
 		P.row(1) = P.row(1) / focal;
 
-		CameraPose p;
-		p.R = P.block<3, 3>(0, 0);
-		p.t = P.block<3, 1>(0, 3);
-		// p.focal = focal;
+        Eigen::Matrix3d R = P.block<3, 3>(0, 0);
+        Eigen::Vector3d t = P.block<3, 1>(0, 3);
+		CameraPose p(R, t);
+		
 		// p.dist_params.push_back(lambda * (focal*focal));
 
 		poses->push_back(p);
@@ -407,11 +423,13 @@ std::vector<double> *output_focals, std::vector<double> *output_ks) {
 
 int p4pfr_normalizeInput(const std::vector<Eigen::Vector2d> &x, const std::vector<Eigen::Vector3d> &X,
          std::vector<CameraPose> *output_poses, std::vector<double> *output_focals, std::vector<double> *output_ks,
-		 bool normalize_image_coord = true, bool center_world_coord = true, bool normalize_world_coord = true,
-		 bool check_chirality = true, bool check_reprojection_error = false, double reprojection_threshold = 10.0) {
+		 bool normalize_image_coord, bool center_world_coord, bool normalize_world_coord,
+		 bool check_chirality, bool check_reprojection_error, double reprojection_threshold) {
 
 
 	// Rescale image plane
+	std::vector<Eigen::Vector2d> x_scaled;
+	x_scaled.resize(4);
 	double focal0 = 0.0;
 	for (int i = 0; i < 4; ++i) {
 		focal0 += x[i].norm();
@@ -419,12 +437,14 @@ int p4pfr_normalizeInput(const std::vector<Eigen::Vector2d> &x, const std::vecto
 	focal0 /= 4;
 
 	for (int i = 0; i < 4; ++i) {
-		x[i] /= focal0;
+		x_scaled[i] = x[i] / focal0;
 	}
 
 	// Translate world coordinate system
 	Eigen::Vector3d t0(0.0, 0.0, 0.0);
 	double s0 = 1.0;
+	std::vector<Eigen::Vector3d> X_shifted;
+	X_shifted.resize(4);
 
 	if (center_world_coord) {
 		for (int i = 0; i < 4; ++i) {
@@ -432,58 +452,48 @@ int p4pfr_normalizeInput(const std::vector<Eigen::Vector2d> &x, const std::vecto
 		}
 		t0 /= 4;
 		for (int i = 0; i < 4; ++i) {
-			X[i] -= t0;
+			X_shifted[i] = X[i] - t0;
 		}
 	}
 
 	// Rescale world coordinate system
+	std::vector<Eigen::Vector3d> X_scaled;
+	X_scaled.resize(4);
 	if(normalize_world_coord) {
 		for (int i = 0; i < 4; ++i) {
-			s0 += X[i].norm();
+			s0 += X_shifted[i].norm();
 		}
 		s0 /= 4;
 		for (int i = 0; i < 4; ++i) {
-			X[i] /= s0;
+			X_scaled[i] = X_shifted[i] / s0;
 		}
 	}
 
 	// Call solver implementation
-	poses->clear();
-	int n_sols = p4pfr(x, X, poses, output_focals, output_ks);
+	output_poses->clear();
+	int n_sols = p4pfr(x_scaled, X_scaled, output_poses, output_focals, output_ks);
 
 	if (check_chirality)
-		filter_chirality(X, *poses);
+		filter_chirality(X_scaled, *output_poses);
 
 	// Revert image coordinate scaling
 	if (normalize_image_coord) {
-		for (int i = 0; i < poses->size(); ++i) {
-			(*poses)[i].focal *= focal0;
+		for (int i = 0; i < output_poses->size(); ++i) {
+			(*output_focals)[i] *= focal0;
 		}
 	}
 
 	// Revert world coordinate changes
 	if (normalize_world_coord) {
-		for (int i = 0; i < poses->size(); ++i)
-			(*poses)[i].t = (*poses)[i].t * s0;
+		for (int i = 0; i < output_poses->size(); ++i)
+			(*output_poses)[i].t = (*output_poses)[i].t * s0;
 	}
 	if (center_world_coord) {
-		for (int i = 0; i < poses->size(); ++i)
-			(*poses)[i].t -= (*poses)[i].R * t0;
+		for (int i = 0; i < output_poses->size(); ++i)
+			(*output_poses)[i].t -= (*output_poses)[i].R() * t0;
 	}
 
 	return n_sols;
-
-}
-
-void filter_chirality(const std::vector<Eigen::Vector3d> &world_points, std::vector<CameraPose>& poses) {
-
-	for (int i = 0; i < poses.size(); ++i) {
-		for (int k = 0; k < world_points.size(); ++k) {
-			if (((poses[i].R.block<1, 3>(2, 0) * world_points[k]).array() + poses[i].t(2)).minCoeff() < 0) {
-				poses.erase(poses.begin() + i);
-				break;
-			}
-		}
 
 }
 

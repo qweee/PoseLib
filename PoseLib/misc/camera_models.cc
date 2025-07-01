@@ -1172,11 +1172,11 @@ void SimpleFisheyeCameraModel::project(const std::vector<double> &params, const 
 
         const double inv_r = 1.0 / rho;
         (*xp)(0) = params[0] * x(0) * inv_r * theta + params[1];
-        (*xp)(1) = params[1] * x(1) * inv_r * theta + params[2];
+        (*xp)(1) = params[0] * x(1) * inv_r * theta + params[2];
     } else {
         // Very close to the principal axis - ignore distortion
         (*xp)(0) = params[0] * x(0) + params[1];
-        (*xp)(1) = params[1] * x(1) + params[2];
+        (*xp)(1) = params[0] * x(1) + params[2];
     }
 }
 
@@ -1206,18 +1206,10 @@ void SimpleFisheyeCameraModel::unproject(const std::vector<double> &params, cons
     x->normalize();
 }
 
-void SimpleFisheyeCameraModel::getPosefromDepth(const Eigen::Vector4d &depths, const double f, const Eigen::Vector2d &xp,
-                                         Eigen::Vector3d *x) {
-
-    // TODO: implement the poses from depth and focal length (fisheye equidistant)
-    // get R and t using procrustes
-    const double f = params[0];
-    const double cx = params[1];
-    const double cy = params[2];
-
-    const double theta = std::atan2(xp(1), xp(0));
-    const double rd = f * std::tan(theta);
-
+void SimpleFisheyeCameraModel::project_with_jac(const std::vector<double> &params, const Eigen::Vector3d &x,
+                                                Eigen::Vector2d *xp, Eigen::Matrix<double, 2, 3> *jac,
+                                                Eigen::Matrix<double, 2, Eigen::Dynamic> *jac_params) {
+    std::cout << "To be implemented" << std::endl;
 }
 
 
