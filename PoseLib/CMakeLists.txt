@@ -10,6 +10,8 @@ set(SOURCES
     solvers/p3p_ding.cc
     solvers/p4pf.cc
     solvers/p4pfr.cc
+    solvers/p4pf_fisheye.cc
+    solvers/p4pf_fisheye_depth.cc
     solvers/p35pf.cc
     solvers/p5pf.cc
     solvers/p5pfr.cc
@@ -53,6 +55,7 @@ set(SOURCES
     robust/estimators/hybrid_pose.cc
     robust/estimators/homography.cc
     robust/optim/lm_impl.cc
+    HCsolvers/HCproblems/helper.cc
 )
 
 # Set HEADERS_PUBLIC variable
@@ -68,6 +71,8 @@ set(HEADERS_PUBLIC
     solvers/p3p_ding.h
     solvers/p4pf.h
     solvers/p4pfr.h
+    solvers/p4pf_fisheye.h
+    solvers/p4pf_fisheye_depth.h
     solvers/p35pf.h
     solvers/p5pf.h
     solvers/p5lp_radial.h
@@ -113,6 +118,9 @@ set(HEADERS_PUBLIC
     robust/estimators/relative_pose.h
     robust/estimators/hybrid_pose.h
     robust/estimators/homography.h
+    HCsolvers/HCproblems/HCproblem_base.h
+    HCsolvers/HCproblems/absolute_fisheye.h
+    HCsolvers/HCproblems/helper.h
 )
 
 # Set HEADERS_PRIVATE variable

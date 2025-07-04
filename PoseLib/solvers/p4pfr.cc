@@ -473,8 +473,8 @@ int p4pfr_normalizeInput(const std::vector<Eigen::Vector2d> &x, const std::vecto
 	output_poses->clear();
 	int n_sols = p4pfr(x_scaled, X_scaled, output_poses, output_focals, output_ks);
 
-	if (check_chirality)
-		filter_chirality(X_scaled, *output_poses);
+	// if (check_chirality)
+	// 	filter_chirality(X_scaled, *output_poses);
 
 	// Revert image coordinate scaling
 	if (normalize_image_coord) {

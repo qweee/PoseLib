@@ -61,6 +61,7 @@ struct RelativePoseProblemInstance {
 struct CalibPoseValidator {
     // Computes the distance to the ground truth pose
     static double compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose, double scale);
+    static double compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose);
     static double compute_pose_error(const RelativePoseProblemInstance &instance, const CameraPose &pose);
     static double compute_pose_error(const RelativePoseProblemInstance &instance, const ImagePair &image_pair);
     static double compute_pose_error(const RelativePoseProblemInstance &instance,

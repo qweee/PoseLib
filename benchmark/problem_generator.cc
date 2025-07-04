@@ -18,6 +18,11 @@ double CalibPoseValidator::compute_pose_error(const AbsolutePoseProblemInstance 
     return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm() +
            std::abs(instance.scale_gt - scale);
 }
+
+double CalibPoseValidator::compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose) {
+    return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm();
+}
+
 double CalibPoseValidator::compute_pose_error(const RelativePoseProblemInstance &instance, const CameraPose &pose) {
     return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm();
 }
@@ -234,7 +239,7 @@ double UnknownFocalFisheyeValidator::compute_pose_error(const AbsolutePoseProble
                                                  double focal) {
 
     return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm() +
-           std::abs(instance.focal_gt - focal);
+           std::abs(instance.focal_gt - focal)/std::abs(instance.focal_gt);
 }
 
 double UnknownFocalFisheyeValidator::compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose) {
@@ -353,6 +358,7 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
 
         if (options.unknown_rd_) {
             instance.k_gt = rd_gen(random_engine);
+            // instance.k_gt = -0.12;
             radial_distortion_camera = Camera("DIVISION", {1.0, 1.0, 0.0, 0.0, instance.k_gt}, -1, -1);
         }
 
